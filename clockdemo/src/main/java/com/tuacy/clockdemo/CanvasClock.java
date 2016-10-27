@@ -2,7 +2,6 @@ package com.tuacy.clockdemo;
 
 
 import android.content.Context;
-import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -17,8 +16,8 @@ import java.util.Calendar;
 
 public class CanvasClock extends View {
 
-	private static final int MIN_WIDTH_DP  = 100;
-	private static final int MIN_HEIGHT_DP = 100;
+	private static final int DEFAULT_WIDTH_DP  = 400;
+	private static final int DEFAULT_HEIGHT_DP = 400;
 
 	/**
 	 * 时钟的半径
@@ -51,11 +50,11 @@ public class CanvasClock extends View {
 	}
 
 	private void init(AttributeSet attrs) {
-		if (attrs != null) {
-			TypedArray styled = getContext().obtainStyledAttributes(attrs, R.styleable.CanvasClock);
-			mRadius = (int) styled.getDimension(R.styleable.CanvasClock_clock_radius, 0);
-			styled.recycle();
-		}
+//		if (attrs != null) {
+//			TypedArray styled = getContext().obtainStyledAttributes(attrs, R.styleable.CanvasClock);
+//			mRadius = (int) styled.getDimension(R.styleable.CanvasClock_clock_radius, 0);
+//			styled.recycle();
+//		}
 		mProportion = 1;
 
 		mOuterCirclePaint = new Paint();
@@ -99,43 +98,34 @@ public class CanvasClock extends View {
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		int width, height;
-		if (mRadius == 0) {
-			width = measureWidth(widthMeasureSpec);
-			height = measureHeight(heightMeasureSpec);
-			width = height = Math.min(width, height);
-			mRadius = width / 2;
-		} else {
-			width = height = 2 * mRadius;
-		}
+		width = measureDimension(DEFAULT_WIDTH_DP, widthMeasureSpec);
+		height = measureDimension(DEFAULT_HEIGHT_DP, heightMeasureSpec);
+		width = height = Math.min(width, height);
+		mRadius = width / 2;
 		mProportion = mRadius / 200.0f;
 		setMeasuredDimension(width, height);
 	}
 
-	private int measureWidth(int measureSpec) {
-		int result = DensityUtils.dp2px(getContext(), MIN_WIDTH_DP);
-		int specMode = MeasureSpec.getMode(measureSpec);
-		int specSize = MeasureSpec.getSize(measureSpec);
-		if (specMode == MeasureSpec.EXACTLY) {
-			result = specSize;
-		} else {
-			if (specMode == MeasureSpec.AT_MOST) {
-				result = Math.max(result, specSize);
-			}
-		}
-		return result;
-	}
+	protected int measureDimension(int defaultSize, int measureSpec) {
 
-	private int measureHeight(int measureSpec) {
-		int result = DensityUtils.dp2px(getContext(), MIN_HEIGHT_DP);
+		int result;
 		int specMode = MeasureSpec.getMode(measureSpec);
 		int specSize = MeasureSpec.getSize(measureSpec);
+
 		if (specMode == MeasureSpec.EXACTLY) {
-			result = specSize;
+			//1. layout给出了确定的值，比如：100dp
+			//2. layout使用的是match_parent，但父控件的size已经可以确定了，比如设置的是具体的值或者match_parent
+			result = specSize; //建议：result直接使用确定值
+		} else if (specMode == MeasureSpec.AT_MOST) {
+			//1. layout使用的是wrap_content
+			//2. layout使用的是match_parent,但父控件使用的是确定的值或者wrap_content
+			result = Math.min(defaultSize, specSize); //建议：result不能大于specSize
 		} else {
-			if (specMode == MeasureSpec.AT_MOST) {
-				result = Math.max(result, specSize);
-			}
+			//UNSPECIFIED,没有任何限制，所以可以设置任何大小
+			//多半出现在自定义的父控件的情况下，期望由自控件自行决定大小
+			result = defaultSize;
 		}
+
 		return result;
 	}
 
